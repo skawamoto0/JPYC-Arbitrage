@@ -299,6 +299,10 @@ function JpycArbitrage(){
 	};
 	t.Update = function(){
 		let t = this;
+		localStorage.setItem("JpycArbitrage.private", document.getElementById("private").value);
+		localStorage.setItem("JpycArbitrage.iv", document.getElementById("iv").value);
+		localStorage.setItem("JpycArbitrage.amount", document.getElementById("amount").value);
+		localStorage.setItem("JpycArbitrage.threshold", document.getElementById("threshold").value);
 		t.ContractAddress = document.getElementById("contract").value;
 		t.Amount = t.web3.utils.toBN(document.getElementById("amount").value).mul(t.bn10e18);
 		t.Threshold = t.web3.utils.toBN(document.getElementById("threshold").value).mul(t.bn10e18);
@@ -318,6 +322,7 @@ function JpycArbitrage(){
 		t.EncryptPrivateKey(document.getElementById("password").value, Function("return new Uint8Array(" + document.getElementById("iv").value + ");")(), document.getElementById("newprivate").value).then(function(x){
 			document.getElementById("private").value = "[" + x.toString() + "]";
 			document.getElementById("newprivate").value = "";
+			t.Update();
 		});
 	}
 	t.Log = function(x){
@@ -326,10 +331,6 @@ function JpycArbitrage(){
 	t.Loop = function(){
 		let t = this;
 		try{
-			localStorage.setItem("JpycArbitrage.private", document.getElementById("private").value);
-			localStorage.setItem("JpycArbitrage.iv", document.getElementById("iv").value);
-			localStorage.setItem("JpycArbitrage.amount", document.getElementById("amount").value);
-			localStorage.setItem("JpycArbitrage.threshold", document.getElementById("threshold").value);
 			t.Update();
 			t.CheckArbitrage().then(function(x){
 				document.getElementById("quote").innerText = "Profit will be " + ((parseInt(x[0]) - parseInt(t.Amount)) / (10 ** 18)) + " JPYC with the route " + x[1];
@@ -396,11 +397,11 @@ var JA = new JpycArbitrage();
 <div class="boxoneline texttitle2">User authentication</div>
 <div class="boxoneline">
 <span>Encrypted private key<div name="popup" class="boxinline textpopup">The private key is encrypted with the password and the seed to prevent theft.</div></span><br>
-<input type="text" id="private" class="boxinline textinput"><br>
+<input type="text" id="private" class="boxinline textinput" onchange="JA.Update();"><br>
 <span>Initialization vector<div name="popup" class="boxinline textpopup">This is a seed for encryption.</div></span><br>
-<input type="text" id="iv" class="boxinline textinput"><br>
+<input type="text" id="iv" class="boxinline textinput" onchange="JA.Update();"><br>
 <span>Password<div name="popup" class="boxinline textpopup">This is used for encryption of the private key.<br>This can be empty but it is not recommended.<br>Only uppercase and lowercase letters, digits and hyphen are accepted.<br>The length should be less than 43 characters.</div></span><br>
-<input type="password" id="password" class="boxinline textinput"><br>
+<input type="password" id="password" class="boxinline textinput" onchange="JA.Update();"><br>
 </div>
 </div>
 <div class="boxinline textfloat" style="min-width: 20em; vertical-align: top;">
