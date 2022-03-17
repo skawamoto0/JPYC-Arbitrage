@@ -20,6 +20,7 @@
 .textmain{
 	color: #000000;
 	background-color: #ffffff;
+	text-align: left;
 	font-size: 1em;
 }
 .texttitle1{
@@ -43,7 +44,14 @@
 .textfloat{
 	color: #000000;
 	background-color: #e0ffff;
+	text-align: left;
 	font-size: 1em;
+}
+.textpopup{
+	color: #000000;
+	background-color: #ffffe0;
+	text-align: left;
+	font-size: 1rem;
 }
 .textinput{
 	color: #000000;
@@ -256,19 +264,6 @@ function JpycArbitrage(){
 			});
 		});
 	};
-	t.Approve = function(){
-		let t = this;
-		t.AllowanceJpyc().then(function(x){
-			if(t.web3.utils.toBN(x).lt(t.web3.utils.toBN("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))){
-				t.Log("Approve the contract");
-				t.ApproveJpyc().then(function(x){
-					t.Log("Transaction hash : " + x.transactionHash);
-				});
-			}else{
-				t.Log("The contract is already approved");
-			}
-		});
-	};
 	t.EncryptPrivateKey = function(Password, IV, PrivateKey){
 		let t = this;
 		return new Promise(function(a, b){
@@ -287,6 +282,19 @@ function JpycArbitrage(){
 					a(new TextDecoder().decode(x));
 				});
 			});
+		});
+	};
+	t.Approve = function(){
+		let t = this;
+		t.AllowanceJpyc().then(function(x){
+			if(t.web3.utils.toBN(x).lt(t.web3.utils.toBN("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))){
+				t.Log("Approve the contract");
+				t.ApproveJpyc().then(function(x){
+					t.Log("Transaction hash : " + x.transactionHash);
+				});
+			}else{
+				t.Log("The contract is already approved");
+			}
 		});
 	};
 	t.Update = function(){
@@ -357,28 +365,48 @@ function JpycArbitrage(){
 		clearTimeout(t.Timer);
 	};
 }
-
+function InitializePopup(Name){
+	Array.prototype.forEach.call(document.getElementsByName(Name), function(e){
+		new (function(x){
+			let t = this;
+			t.Popup = x;
+			t.Popup.style.position = "fixed";
+			t.Popup.style.zIndex = "1";
+			t.Popup.style.display = "none";
+			t.Popup.parentNode.addEventListener("mousemove", function(e){
+				t.Popup.style.left = (e.clientX + 1) + "px";
+				t.Popup.style.top = (e.clientY + 1) + "px";
+			});
+			t.Popup.parentNode.addEventListener("mouseenter", function(e){
+				t.Popup.style.display = "block";
+			});
+			t.Popup.parentNode.addEventListener("mouseleave", function(e){
+				t.Popup.style.display = "none";
+			});
+		})(e);
+	});
+}
 var JA = new JpycArbitrage();
 </script>
 </head>
-<body onload="JA.StartLoop();">
+<body onload="JA.StartLoop();InitializePopup('popup');">
 <div class="boxoneline textouter" style="margin: auto; width: 65em;">
 <div class="boxoneline texttitle1">JPYC Arbitrage</div>
 <div class="boxinline textfloat" style="min-width: 20em; vertical-align: top;">
 <div class="boxoneline texttitle2">User authentication</div>
 <div class="boxoneline">
-Encrypted private key<br>
+<span>Encrypted private key<div name="popup" class="boxinline textpopup">The private key is encrypted with the password and the seed to prevent theft.</div></span><br>
 <input type="text" id="private" class="boxinline textinput"><br>
-Initialization vector<br>
+<span>Initialization vector<div name="popup" class="boxinline textpopup">This is a seed for encryption.</div></span><br>
 <input type="text" id="iv" class="boxinline textinput"><br>
-Password<br>
+<span>Password<div name="popup" class="boxinline textpopup">This is used for encryption of the private key.<br>This can be empty but it is not recommended.<br>Only uppercase and lowercase letters, digits and hyphen are accepted.<br>The length should be less than 43 characters.</div></span><br>
 <input type="password" id="password" class="boxinline textinput"><br>
 </div>
 </div>
 <div class="boxinline textfloat" style="min-width: 20em; vertical-align: top;">
 <div class="boxoneline texttitle2">User data settings</div>
 <div class="boxoneline">
-Your private key<br>
+<span>Your private key<div name="popup" class="boxinline textpopup">This should be tied to an wallet address that has JPYC tokens.<br>The key should start with 0x and be 64 characters length hexadecimal.<br>If you set a password and save this, you should enter the password every time when the page is reloaded.</div></span><br>
 <input type="text" id="newprivate" value="0x" class="boxinline textinput"><br>
 <form onsubmit="JA.UpdatePrivateKey();return false;">
 <input type="submit" value="Encrypt and save the private key" class="boxinline textbutton1">
@@ -388,11 +416,11 @@ Your private key<br>
 <div class="boxinline textfloat" style="min-width: 20em; vertical-align: top;">
 <div class="boxoneline texttitle2">Contract settings</div>
 <div class="boxoneline">
-Contract address<br>
+<span>Contract address<div name="popup" class="boxinline textpopup">This is the address of the arbitrage contract.<br>Normally you do not have to change this.</div></span><br>
 <input type="text" id="contract" value="0x86deBC1F254AdF089575ACeCb66e79340fdE5192" class="boxinline textinput"><br>
-Amount<br>
+<span>Amount<div name="popup" class="boxinline textpopup">This is how many tokens will be used for a transaction.<br>Only integer values are accepted.</div></span><br>
 <input type="text" id="amount" class="boxinline textinput"><br>
-Threshold<br>
+<span>Threshold<div name="popup" class="boxinline textpopup">Transactions will be issued if the profit is more than or equal to this.<br>Only integer values are accepted.</div></span><br>
 <input type="text" id="threshold" class="boxinline textinput"><br>
 <form onsubmit="JA.Approve();return false;">
 <input type="submit" value="Approve the token" class="boxinline textbutton1">
