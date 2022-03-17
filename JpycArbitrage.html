@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JPYC Arbitrage</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+<script type="text/javascript">
+const RpcPolygon = "https://polygon-rpc.com/";
+const AddressJpyc = "0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c";
+function Get(url){
+	return new Promise(function(a, b){
+		let x = new XMLHttpRequest();
+		x.onload = function(){
+			if(x.status == 200){
+				a(x.response);
+			}else{
+				b(x.status);
+			}
+		};
+		x.onerror = function(){
+			b(null);
+		}
+		x.open("GET", url);
+		x.send();
+	});
+}
+function GetPolygonGasPrice(){
+	return new Promise(function(a, b){
+		Get("https://gasstation-mainnet.matic.network/").then(function(x){
+			a(JSON.parse(x).standard + "000000000");
+		}, function(x){
+			a("0");
+		});
+	});
+}
+function Approve(){
+	window.ethereum.request({method : "eth_requestAccounts"}).then(function(x){
+		window.ethereum.request({method : "wallet_switchEthereumChain", params : [{chainId : "0x89"}]}).then(function(x){
+			let w = new Web3(window.ethereum);
+			w.eth.getAccounts().then(function(a){
+				let abi = [
+					{
+						inputs : [
+							{
+								name : "",
+								type : "address"
+							},
+							{
+								name : "",
+								type : "uint256"
+							}
+						],
+						name : "approve",
+						outputs : [
+							{
+								name : "",
+								type : "bool"
+							}
+						],
+						type : "function"
+					}
+				];
+				let c = new w.eth.Contract(abi, AddressJpyc);
+				GetPolygonGasPrice().then(function(x){
+					c.methods.approve(document.getElementById("contract").value, w.utils.toBN("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")).send({from : a[0], gas : 100000, gasPrice : x}).then(function(x){
+						document.getElementById("output").innerText += "Transaction hash : " + x.transactionHash + "\n";
+					});
+				});
+			});
+		});
+	});
+}
+function Arbitrage(route){
+	window.ethereum.request({method : "eth_requestAccounts"}).then(function(x){
+		window.ethereum.request({method : "wallet_switchEthereumChain", params : [{chainId : "0x89"}]}).then(function(x){
+			let w = new Web3(window.ethereum);
+			w.eth.getAccounts().then(function(a){
+				let abi = [
+					{
+						inputs : [
+							{
+								name : "amount",
+								type : "uint256"
+							},
+							{
+								name : "minimum",
+								type : "uint256"
+							},
+							{
+								name : "route",
+								type : "uint256"
+							},
+							{
+								name : "loop",
+								type : "uint256"
+							}
+						],
+						name : "arbitrage",
+						outputs : [],
+						type : "function"
+					}
+				];
+				let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+				GetPolygonGasPrice().then(function(x){
+					c.methods.arbitrage(parseInt(document.getElementById("amount").value) + "000000000000000000", parseInt(document.getElementById("amount").value) + "000000000000000000", route, 1).send({from : a[0], gas : 2000000, gasPrice : x}).then(function(x){
+						document.getElementById("output").innerText += "Transaction hash : " + x.transactionHash + "\n";
+					});
+				});
+			});
+		});
+	});
+}
+function CheckArbitrage(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "checkArbitrage",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				},
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.checkArbitrage(parseInt(document.getElementById("amount").value) + "000000000000000000").call().then(function(x){
+		document.getElementById("output").innerText += "You will earn " + (parseInt(x[0]) / (10 ** 18) - parseInt(document.getElementById("amount").value)) + " JPYC with the route " + x[1] + "\n";
+	});
+}
+function RateJpycToUsdc(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "rateJpycToUsdc",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.rateJpycToUsdc(parseInt(document.getElementById("amount").value) + "000000000000000000").call().then(function(x){
+		document.getElementById("output").innerText += document.getElementById("amount").value + " JPYC -> " + parseInt(x) / (10 ** 6) + " USDC\n";
+	});
+}
+function RateUsdcToJpyc(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "rateUsdcToJpyc",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.rateUsdcToJpyc(parseInt(document.getElementById("amount").value) + "000000").call().then(function(x){
+		document.getElementById("output").innerText += document.getElementById("amount").value + " USDC -> " + parseInt(x) / (10 ** 18) + " JPYC\n";
+	});
+}
+function RateJjpyToJpyc(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "rateJjpyToJpyc",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.rateJjpyToJpyc(parseInt(document.getElementById("amount").value) + "000000000000000000").call().then(function(x){
+		document.getElementById("output").innerText += document.getElementById("amount").value + " jJPY -> " + parseInt(x) / (10 ** 18) + " JPYC\n";
+	});
+}
+function RateJpycToJjpy(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "rateJpycToJjpy",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.rateJpycToJjpy(parseInt(document.getElementById("amount").value) + "000000000000000000").call().then(function(x){
+		document.getElementById("output").innerText += document.getElementById("amount").value + " JPYC -> " + parseInt(x) / (10 ** 18) + " jJPY\n";
+	});
+}
+function RateUsdcToJjpy(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "rateUsdcToJjpy",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.rateUsdcToJjpy(parseInt(document.getElementById("amount").value) + "000000").call().then(function(x){
+		document.getElementById("output").innerText += document.getElementById("amount").value + " USDC -> " + parseInt(x) / (10 ** 18) + " jJPY\n";
+	});
+}
+function RateJjpyToUsdc(){
+	let w = new Web3(RpcPolygon);
+	let abi = [
+		{
+			inputs : [
+				{
+					name : "amount",
+					type : "uint256"
+				}
+			],
+			name : "rateJjpyToUsdc",
+			outputs : [
+				{
+					name : "",
+					type : "uint256"
+				}
+			],
+			type : "function"
+		}
+	];
+	let c = new w.eth.Contract(abi, document.getElementById("contract").value);
+	c.methods.rateJjpyToUsdc(parseInt(document.getElementById("amount").value) + "000000000000000000").call().then(function(x){
+		document.getElementById("output").innerText += document.getElementById("amount").value + " jJPY -> " + parseInt(x) / (10 ** 6) + " USDC\n";
+	});
+}
+</script>
+</head>
+<body>
+Contract address<br>
+<input type="text" id="contract" value="0x86deBC1F254AdF089575ACeCb66e79340fdE5192"><br>
+Amount<br>
+<input type="text" id="amount" value="10000">
+<form onsubmit="Approve();return false;">
+<input type="submit" value="Approve the token">
+</form>
+<form onsubmit="Arbitrage(0);return false;">
+<input type="submit" value="Arbitrage route 0 (JPYC -> jJPY -> USDC -> JPYC)">
+</form>
+<form onsubmit="Arbitrage(1);return false;">
+<input type="submit" value="Arbitrage route 1 (JPYC -> USDC -> jJPY -> JPYC)">
+</form>
+<hr>
+View functions<br>
+<form onsubmit="CheckArbitrage();return false;">
+<input type="submit" value="Check arbitrage profit and route">
+</form>
+<form onsubmit="RateJpycToUsdc();return false;">
+<input type="submit" value="Quote JPYC -> USDC">
+</form>
+<form onsubmit="RateUsdcToJpyc();return false;">
+<input type="submit" value="Quote USDC -> JPYC">
+</form>
+<form onsubmit="RateJjpyToJpyc();return false;">
+<input type="submit" value="Quote jJPY -> JPYC">
+</form>
+<form onsubmit="RateJpycToJjpy();return false;">
+<input type="submit" value="Quote JPYC -> jJPY">
+</form>
+<form onsubmit="RateUsdcToJjpy();return false;">
+<input type="submit" value="Quote USDC -> jJPY">
+</form>
+<form onsubmit="RateJjpyToUsdc();return false;">
+<input type="submit" value="Quote jJPY -> USDC">
+</form>
+<hr>
+<span id="output"></span>
+</body>
+</html>
