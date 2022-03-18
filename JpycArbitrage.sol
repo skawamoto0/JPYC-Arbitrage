@@ -9,11 +9,6 @@ interface IErc20 {
     function transferFrom(address, address, uint256) external returns(bool);
 }
 
-interface IImpermaxRouter {
-    function mint(address, uint256, address, uint256) external returns(uint256);
-    function redeem(address, uint256, address, uint256, bytes memory) external returns(uint256);
-}
-
 struct UniswapExactInputSingle {
     address _0;
     address _1;
@@ -27,10 +22,6 @@ struct UniswapExactInputSingle {
 
 interface IUniswapQuoter {
     function quoteExactInputSingle(address, address, uint24, uint256, uint160) external returns(uint256);
-}
-
-interface IUniswapPool {
-    function swap(address, bool, int256, uint160, bytes calldata) external returns(int256, int256);
 }
 
 interface IUniswapRouter {
@@ -68,7 +59,6 @@ contract JpycArbitrage {
     IErc20 internal constant jjpy = IErc20(0x8343091F2499FD4b6174A46D067A920a3b851FF9);
     IErc20 internal constant usdc = IErc20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
     IUniswapQuoter internal constant quoterUniswap = IUniswapQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
-    IUniswapPool internal constant poolUniswap = IUniswapPool(0x98349E1689538fd878646B77B3dCd89040A35Eb6);
     IUniswapRouter internal constant routerUniswap = IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     ICurvePool internal constant poolCurve = ICurvePool(0xE8dCeA7Fb2Baf7a9F4d9af608F06d78a687F8d9A);
     IJarvisPool internal constant poolJarvis = IJarvisPool(0x6cA82a7E54053B102e7eC452788cC19204e831de);

@@ -90,7 +90,7 @@ function JpycArbitrage(){
 			let x = new XMLHttpRequest();
 			x.onload = function(){
 				if(x.status == 200){
-					a(Math.min(parseInt(JSON.parse(x.response).fast), 500) + "000000000");
+					a(Math.min(parseInt(JSON.parse(x.response).standard) + 1, 500) + "000000000");
 				}else{
 					b(x.status);
 				}
@@ -418,7 +418,7 @@ var JA = new JpycArbitrage();
 <div class="boxoneline texttitle2">Contract settings</div>
 <div class="boxoneline">
 <span>Contract address<div name="popup" class="boxinline textpopup">This is the address of the arbitrage contract.<br>Normally you do not have to change this.</div></span><br>
-<input type="text" id="contract" value="0x86deBC1F254AdF089575ACeCb66e79340fdE5192" class="boxinline textinput"><br>
+<input type="text" id="contract" value="0xed34c3A95553bafb44a296275C5668804e760e86" class="boxinline textinput"><br>
 <span>Amount<div name="popup" class="boxinline textpopup">This is how many tokens will be used for a transaction.<br>Only integer values are accepted.</div></span><br>
 <input type="text" id="amount" class="boxinline textinput"><br>
 <span>Threshold<div name="popup" class="boxinline textpopup">Transactions will be issued if the profit is more than or equal to this.<br>Only integer values are accepted.</div></span><br>
