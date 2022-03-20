@@ -73,6 +73,12 @@
 	background-color: #e0e0e0;
 	font-size: 1em;
 }
+.imageinline{
+	height: 1em;
+	margin: 0em;
+	border: 0em;
+	vertical-align: middle;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 <script type="text/javascript">
@@ -387,12 +393,22 @@ function InitializePopup(Name){
 		})(e);
 	});
 }
+function InitializeTokenImage(Name){
+	let ImageUrl = {
+		"0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c" : "https://assets.coingecko.com/coins/images/17277/small/WoZ8rruL_400x400.png",
+		"0x2791bca1f2de4661ed88a30c99a7a9449aa84174" : "https://assets.coingecko.com/coins/images/6319/small/USD_Coin_icon.png",
+		"0x8343091f2499fd4b6174a46d067a920a3b851ff9" : "https://assets.coingecko.com/coins/images/24327/small/jJPY.png"
+	};
+	Array.prototype.forEach.call(document.getElementsByName(Name), function(e){
+		e.src = ImageUrl[e.id.toLowerCase()];
+	});
+}
 var JA = new JpycArbitrage();
 </script>
 </head>
-<body onload="JA.StartLoop();InitializePopup('popup');">
+<body onload="JA.StartLoop();InitializePopup('popup');InitializeTokenImage('token');">
 <div class="boxoneline textouter" style="margin: auto; width: 65em;">
-<div class="boxoneline texttitle1">JPYC Arbitrage</div>
+<div class="boxoneline texttitle1"><img name="token" id="0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c" class="imageinline">➡<img name="token" id="0x2791bca1f2de4661ed88a30c99a7a9449aa84174" class="imageinline">➡<img name="token" id="0x8343091f2499fd4b6174a46d067a920a3b851ff9" class="imageinline">➡<img name="token" id="0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c" class="imageinline"> JPYC Arbitrage <img name="token" id="0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c" class="imageinline">➡<img name="token" id="0x8343091f2499fd4b6174a46d067a920a3b851ff9" class="imageinline">➡<img name="token" id="0x2791bca1f2de4661ed88a30c99a7a9449aa84174" class="imageinline">➡<img name="token" id="0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c" class="imageinline"></div>
 <div class="boxinline textfloat" style="min-width: 20em; vertical-align: top;">
 <div class="boxoneline texttitle2">User authentication</div>
 <div class="boxoneline">
@@ -407,7 +423,7 @@ var JA = new JpycArbitrage();
 <div class="boxinline textfloat" style="min-width: 20em; vertical-align: top;">
 <div class="boxoneline texttitle2">User data settings</div>
 <div class="boxoneline">
-<span>Your private key<div name="popup" class="boxinline textpopup">This should be tied to an wallet address that has JPYC tokens.<br>The key should start with 0x and be 64 characters length hexadecimal.<br>If you set a password and save this, you should enter the password every time when the page is reloaded.</div></span><br>
+<span>Your private key<div name="popup" class="boxinline textpopup">This should be tied to an wallet address that has JPYC <img name="token" id="0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c" class="imageinline"> tokens.<br>The key should start with 0x and be 64 characters length hexadecimal.<br>If you set a password and save this, you should enter the password every time when the page is reloaded.</div></span><br>
 <input type="text" id="newprivate" value="0x" class="boxinline textinput"><br>
 <form onsubmit="JA.UpdatePrivateKey();return false;">
 <input type="submit" value="Encrypt and save the private key" class="boxinline textbutton1">
