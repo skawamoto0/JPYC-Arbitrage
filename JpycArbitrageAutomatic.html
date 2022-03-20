@@ -79,8 +79,8 @@
 function JpycArbitrage(){
 	let t = this;
 	t.web3 = new Web3("https://polygon-rpc.com/");
-	t.ContractAddress = ""
-	t.PrivateKey = ""
+	t.ContractAddress = "";
+	t.PrivateKey = "";
 	t.Amount = t.web3.utils.toBN(0);
 	t.Threshold = t.web3.utils.toBN(0);
 	t.bn10e18 = t.web3.utils.toBN(10).pow(t.web3.utils.toBN(18));
@@ -418,7 +418,7 @@ var JA = new JpycArbitrage();
 <div class="boxoneline texttitle2">Contract settings</div>
 <div class="boxoneline">
 <span>Contract address<div name="popup" class="boxinline textpopup">This is the address of the arbitrage contract.<br>Normally you do not have to change this.</div></span><br>
-<input type="text" id="contract" value="0xed34c3A95553bafb44a296275C5668804e760e86" class="boxinline textinput"><br>
+<input type="text" id="contract" value="0x6a312D34b5b2566eceb43AaD1840cD78e1bbf18e" class="boxinline textinput"><br>
 <span>Amount<div name="popup" class="boxinline textpopup">This is how many tokens will be used for a transaction.<br>Only integer values are accepted.</div></span><br>
 <input type="text" id="amount" class="boxinline textinput"><br>
 <span>Threshold<div name="popup" class="boxinline textpopup">Transactions will be issued if the profit is more than or equal to this.<br>Only integer values are accepted.</div></span><br>

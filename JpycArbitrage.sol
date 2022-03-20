@@ -142,7 +142,7 @@ contract JpycArbitrage {
     function rateUsdcToJjpy(uint256 amount) public view returns(uint256) {
         int256 a;
         (, a, , , ) = aggregatorJarvis.latestRoundData();
-        return ((amount - poolJarvis.calculateFee(amount)) * (10 ** jjpy.decimals()) / (10 ** usdc.decimals())) * (10 ** aggregatorJarvis.decimals()) / uint256(a);
+        return ((amount * amount / (amount + poolJarvis.calculateFee(amount))) * (10 ** jjpy.decimals()) / (10 ** usdc.decimals())) * (10 ** aggregatorJarvis.decimals()) / uint256(a);
     }
     function exchangeUsdcToJjpy() public {
         poolJarvis.mint(JarvisMint(derivativeJarvis, 0, usdc.balanceOf(address(this)), 2000000000000000, block.timestamp, address(this)));
