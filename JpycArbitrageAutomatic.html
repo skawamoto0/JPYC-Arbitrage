@@ -89,14 +89,33 @@ function JpycArbitrage(){
 	t.PrivateKey = "";
 	t.Amount = t.web3.utils.toBN(0);
 	t.Threshold = t.web3.utils.toBN(0);
+	t.Paused = false;
+	t.LastCheck = t.web3.utils.toBN(0);
 	t.bn10e18 = t.web3.utils.toBN(10).pow(t.web3.utils.toBN(18));
 	t.Timer = null;
+	t.StringToBN = function(x, Base, Decimals){
+		let t = this;
+		let a = x.toString();
+		if(a.indexOf(".") < 0){
+			return t.web3.utils.toBN(a, Base).mul(t.web3.utils.toBN(Base).pow(t.web3.utils.toBN(Decimals)));
+		}
+		let b = t.web3.utils.toBN(a.slice(0, a.indexOf(".")), Base).mul(t.web3.utils.toBN(Base).pow(t.web3.utils.toBN(Decimals)));
+		let c = a.slice(a.indexOf(".") + 1, a.indexOf(".") + 1 + Decimals);
+		let d = t.web3.utils.toBN(c, Base).mul(t.web3.utils.toBN(Base).pow(t.web3.utils.toBN(Decimals - c.length)));
+		return a.charAt(0) == "-" ? b.sub(d) : b.add(d);
+	}
+	t.BNToString = function(x, Base, Decimals){
+		let t = this;
+		let a = t.web3.utils.toBN(x);
+		let b = a.divmod(t.web3.utils.toBN(Base).pow(t.web3.utils.toBN(Decimals)));
+		return (a.isNeg() ? "-" : "") + b.div.abs().toString(Base) + (Decimals != 0 ? "." + b.mod.abs().toString(Base, Decimals) : "");
+	}
 	t.GetGasPrice = function(){
 		return new Promise(function(a, b){
 			let x = new XMLHttpRequest();
 			x.onload = function(){
 				if(x.status == 200){
-					a(Math.min(parseInt(JSON.parse(x.response).standard) + 1, 500) + "000000000");
+					a(Math.min(parseInt(JSON.parse(x.response).fast) + 1, 300) + "000000000");
 				}else{
 					b(x.status);
 				}
@@ -310,16 +329,25 @@ function JpycArbitrage(){
 		localStorage.setItem("JpycArbitrage.amount", document.getElementById("amount").value);
 		localStorage.setItem("JpycArbitrage.threshold", document.getElementById("threshold").value);
 		t.ContractAddress = document.getElementById("contract").value;
-		t.Amount = t.web3.utils.toBN(document.getElementById("amount").value).mul(t.bn10e18);
-		t.Threshold = t.web3.utils.toBN(document.getElementById("threshold").value).mul(t.bn10e18);
+		t.Amount = t.StringToBN(document.getElementById("amount").value, 10, 18);
+		t.Threshold = t.StringToBN(document.getElementById("threshold").value, 10, 18);
 		document.getElementById("auth").innerText = "Password is incorrect";
 		t.DecryptPrivateKey(document.getElementById("password").value, Function("return new Uint8Array(" + document.getElementById("iv").value + ");")(), Function("return new Uint8Array(" + document.getElementById("private").value + ");")()).then(function(x){
 			document.getElementById("auth").innerText = "Password is authenticated";
 			if(x != t.PrivateKey){
 				t.PrivateKey = x;
-				t.BalanceOfJpyc().then(function(x){
-					document.getElementById("balance").innerText = "Balance " + (parseInt(x) / (10 ** 18)) + " JPYC";
-				});
+				t.UpdateBalance();
+			}
+		});
+	};
+	t.UpdateBalance = function(){
+		let t = this;
+		t.BalanceOfJpyc().then(function(x){
+			document.getElementById("balance").innerText = "Balance " + t.BNToString(x, 10, 18) + " JPYC";
+			if(t.web3.utils.toBN(x).lt(t.Amount)){
+				t.Paused = true;
+			}else{
+				t.Paused = false;
 			}
 		});
 	};
@@ -339,15 +367,21 @@ function JpycArbitrage(){
 		try{
 			t.Update();
 			t.CheckArbitrage().then(function(x){
-				document.getElementById("quote").innerText = "Profit will be " + ((parseInt(x[0]) - parseInt(t.Amount)) / (10 ** 18)) + " JPYC with the route " + x[1];
-				if(t.web3.utils.toBN(t.Threshold).gt(t.web3.utils.toBN(0)) && t.web3.utils.toBN(x[0]).gte(t.Amount) && t.web3.utils.toBN(x[0]).sub(t.Amount).gte(t.Threshold)){
-					t.Log("Profit will be " + ((parseInt(x[0]) - parseInt(t.Amount)) / (10 ** 18)) + " JPYC with the route " + x[1]);
-					t.Arbitrage(x[1]).then(function(x){
-						t.Log("Transaction hash : " + x.transactionHash);
-						t.BalanceOfJpyc().then(function(x){
-							document.getElementById("balance").innerText = "Balance " + (parseInt(x) / (10 ** 18)) + " JPYC";
-						});
-					});
+				if(t.Paused){
+					t.UpdateBalance();
+				}else{
+					if(!t.web3.utils.toBN(x[0]).eq(t.LastCheck)){
+						t.LastCheck = t.web3.utils.toBN(x[0]);
+						document.getElementById("quote").innerText = "Profit will be " + t.BNToString(t.web3.utils.toBN(x[0]).sub(t.Amount), 10, 18) + " JPYC with the route " + x[1];
+						if(t.web3.utils.toBN(t.Threshold).gt(t.web3.utils.toBN(0)) && t.web3.utils.toBN(x[0]).gte(t.Amount) && t.web3.utils.toBN(x[0]).sub(t.Amount).gte(t.Threshold)){
+							t.Log("Profit will be " + t.BNToString(t.web3.utils.toBN(x[0]).sub(t.Amount), 10, 18) + " JPYC with the route " + x[1]);
+							t.Arbitrage(x[1]).then(function(x){
+								t.Log("Transaction hash : " + x.transactionHash);
+								t.UpdateBalance();
+							});
+							t.UpdateBalance();
+						}
+					}
 				}
 			});
 		}catch(e){
@@ -435,9 +469,9 @@ var JA = new JpycArbitrage();
 <div class="boxoneline">
 <span>Contract address<div name="popup" class="boxinline textpopup">This is the address of the arbitrage contract.<br>Normally you do not have to change this.</div></span><br>
 <input type="text" id="contract" value="0x6a312D34b5b2566eceb43AaD1840cD78e1bbf18e" class="boxinline textinput"><br>
-<span>Amount<div name="popup" class="boxinline textpopup">This is how many tokens will be used for a transaction.<br>Only integer values are accepted.</div></span><br>
+<span>Amount<div name="popup" class="boxinline textpopup">This is how many tokens will be used for a transaction.</div></span><br>
 <input type="text" id="amount" class="boxinline textinput"><br>
-<span>Threshold<div name="popup" class="boxinline textpopup">Transactions will be issued if the profit is more than or equal to this.<br>Only integer values are accepted.</div></span><br>
+<span>Threshold<div name="popup" class="boxinline textpopup">Transactions will be issued if the profit is more than or equal to this.</div></span><br>
 <input type="text" id="threshold" class="boxinline textinput"><br>
 <form onsubmit="JA.Approve();return false;">
 <input type="submit" value="Approve the token" class="boxinline textbutton1">
