@@ -150,37 +150,83 @@ contract JpycArbitrage {
         }
         return (amountOut1, route1);
     }
+    function checkArbitrageLimited(uint256 amount, uint256 enable0, uint256 enable1) internal returns(uint256, uint256) {
+        uint256 route0;
+        uint256 amountOut0;
+        uint256 route1;
+        uint256 amountOut1;
+        uint256 amountIn;
+        uint256 amountOut;
+        uint256 i;
+        route0 = 0;
+        amountOut0 = 0;
+        if(enable0 != 0) {
+            amountOut0 = rateJpycToJjpy(0, amount);
+            amountOut0 = rateJjpyToUsdc(0, amountOut0);
+            amountIn = amountOut0;
+            amountOut0 = 0;
+            for(i = 0; i < 2; i++) {
+                amountOut = rateUsdcToJpyc(i, amountIn);
+                if(amountOut > amountOut0) {
+                    amountOut0 = amountOut;
+                    route0 = (route0 & ~(uint256(1) << 3)) | (i << 3);
+                }
+            }
+        }
+        route1 = 1;
+        amountOut1 = 0;
+        if(enable1 != 0) {
+            amountIn = amount;
+            for(i = 0; i < 2; i++) {
+                amountOut = rateJpycToUsdc(i, amountIn);
+                if(amountOut > amountOut1) {
+                    amountOut1 = amountOut;
+                    route1 = (route1 & ~(uint256(1) << 1)) | (i << 1);
+                }
+            }
+            amountOut1 = rateUsdcToJjpy(0, amountOut1);
+            amountOut1 = rateJjpyToJpyc(0, amountOut1);
+        }
+        if(amountOut0 >= amountOut1) {
+            return (amountOut0, route0);
+        }
+        return (amountOut1, route1);
+    }
     function arbitrage(uint256 amount, uint256 minimum, uint256 route, uint256 loop) public {
         uint256 balance;
-        uint256 amountOld;
         uint256 profitOld;
+        uint256 profit;
+        if((route & (1 << 4)) != 0) {
+            if((route & 1) == 0) {
+                (balance, route) = checkArbitrageLimited(amount, 1, 0);
+            }
+            else {
+                (balance, route) = checkArbitrageLimited(amount, 0, 1);
+            }
+            require(balance >= amount);
+        }
         balance = jpyc.balanceOf(msg.sender);
         jpyc.transferFrom(msg.sender, address(this), amount);
-        amountOld = amount;
         profitOld = 0;
         while(loop > 0) {
-            try JpycArbitrage(this).exchange(route) {
+            try JpycArbitrage(this).exchange(amount, route) {
             }
             catch {
-            }
-            amount = jpyc.balanceOf(address(this));
-            if(amount <= amountOld) {
                 break;
             }
-            if(amount - amountOld < profitOld / 2) {
+            profit = jpyc.balanceOf(address(this)) - amount;
+            amount += profit;
+            if(profit <= profitOld / 2) {
                 break;
             }
-            profitOld = amount - amountOld;
-            amountOld = amount;
+            profitOld = profit;
             loop--;
         }
         require(amount >= minimum);
-        jpyc.transfer(msg.sender, jpyc.balanceOf(address(this)));
+        jpyc.transfer(msg.sender, amount);
         require(jpyc.balanceOf(msg.sender) >= balance);
     }
-    function exchange(uint256 route) external {
-        uint256 amount;
-        amount = jpyc.balanceOf(address(this));
+    function exchange(uint256 amount, uint256 route) external {
         if((route & 1) == 0) {
             exchangeJpycToJjpy((route & (1 << 1)) >> 1);
             exchangeJjpyToUsdc((route & (1 << 2)) >> 2);
