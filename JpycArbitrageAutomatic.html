@@ -436,7 +436,7 @@ function JpycArbitrage(){
 	};
 	t.SendArbitrage = function(Route, GasPrice, MaxFeePerGas, MaxPriorityFeePerGas){
 		let t = this;
-		t.ArbitrageFast(Route, (GasPrice || MaxFeePerGas || MaxPriorityFeePerGas) ? GasPrice : t.LastGasPrice, MaxFeePerGas, MaxPriorityFeePerGas).then(function(x){
+		((GasPrice || MaxFeePerGas || MaxPriorityFeePerGas) ? t.ArbitrageFast(Route, GasPrice, MaxFeePerGas, MaxPriorityFeePerGas) : t.Arbitrage(Route)).then(function(x){
 			t.Log("Transaction hash : " + x.transactionHash);
 			t.UpdateBalance();
 		});
